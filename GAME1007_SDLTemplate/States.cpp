@@ -2,6 +2,8 @@
 #include "StateManager.h"
 #include "Engine.h"	
 
+#define _CRT_SECURE_NO_WARNINGS
+
 void State::Render()
 {
 	//SDL_RenderPresent(Engine::Instance().GetRenderer());
@@ -14,10 +16,12 @@ void State::Resume()
 TitleState::TitleState() 
 {
 	m_pButtonTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "StartButton.png");
+	m_pExitTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "ExitButton.png");	
 	m_bkgTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "BackGround.jpg");
 	m_TitleTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "Title.png");
-	m_pButton = { {0,0,284,146}, {400,400,200,100} };
+	m_pButton = { {0,0,500,300}, {400,400,200,100} };
 	m_pTitle = { {0,0,627, 222}, {350,100,300,150} };
+	m_exit = { {0,0,500, 300}, {400,600,200,100} };
 	m_pBackground = { {0,0,1024,768}, {0,0,WIDTH,HEIGHT} };
 }
 
@@ -37,6 +41,20 @@ void TitleState::Update()
 		cout << "entering gamestate" << endl;
 		STMA::ChangeState(new GameState());
 	}
+	if (mouseX > m_pButton.m_dst.x && mouseX < (m_pButton.m_dst.x + m_pButton.m_dst.w)
+		&& mouseY > m_pButton.m_dst.y && mouseY < (m_pButton.m_dst.y + m_pButton.m_dst.h))
+	{
+		m_pButton.m_src.x = 500;
+	}
+	else 
+		m_pButton.m_src.x = 0;
+	if (mouseX > m_exit.m_dst.x && mouseX < (m_exit.m_dst.x + m_exit.m_dst.w)
+		&& mouseY > m_exit.m_dst.y && mouseY < (m_exit.m_dst.y + m_exit.m_dst.h))
+	{
+		m_exit.m_src.x = 500;
+	}
+	else
+		m_exit.m_src.x = 0;
 }
 
 void TitleState::Events()
@@ -66,6 +84,11 @@ void TitleState::Events()
 			{
 				STMA::ChangeState(new GameState());
 			}
+			if (mouseX > m_exit.m_dst.x && mouseX < (m_exit.m_dst.x + m_exit.m_dst.w)
+				&& mouseY > m_exit.m_dst.y && mouseY < (m_exit.m_dst.y + m_exit.m_dst.h))
+			{
+				exit(2);
+			}
 			break;
 		}
 		}
@@ -80,6 +103,7 @@ void TitleState::Render()
 	State::Render();
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_bkgTexture, &m_pBackground.m_src, &m_pBackground.m_dst);
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pButtonTexture, &m_pButton.m_src, &m_pButton.m_dst);
+	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pExitTexture, &m_exit.m_src, &m_exit.m_dst);
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_TitleTexture, &m_pTitle.m_src, &m_pTitle.m_dst);
 	SDL_RenderPresent(Engine::Instance().GetRenderer());
 }
@@ -170,7 +194,14 @@ void GameState::Update()
 		else
 			m_crouching = false;
 	}
-	
+
+	if (frameTimer % 60 == 0)
+	{
+		secondTimer++;
+	}
+	sprintf_s(test, "%d", secondTimer);
+	//tmp = std::to_strin
+	//t/est = frameTimer;
 	std::cout << frameTimer << endl;
 	if (m_player.m_dst.y < 540)
 		m_velocity.y += 1;
@@ -305,117 +336,7 @@ void GameState::Update()
 			STMA::ChangeState(new EndState());
 		}
 	}
-	/*for (unsigned i = 0; i < m_bullets.size(); i++)
-		m_bullets[i]->Update(); // -> combines dereference and member access.
-	//Check for bullets going off-screen
-	for (unsigned i = 0; i < m_bullets.size(); i++)
-	{
-		if (m_bullets[i]->GetRekt()->x >= 1024)
-		{
-			delete m_bullets[i]; //Flag for reallocation
-			m_bullets[i] = nullptr;
-			m_bullets.erase(m_bullets.begin() + i);
-			m_bullets.shrink_to_fit();
-		}
-	}
-	if (frameTimer % (60 * 5) == 0)
-	{
-		//Spawn enemy
-		enemySpawnPos = rand() % 650;
-		m_enemies.push_back(new Enemy({ 0,0,771,807 }, { 1024, enemySpawnPos, 150, 150 }));
-		m_enemies.shrink_to_fit();
-		cout << "New enemy vcector capacity: " << m_enemies.capacity() << endl;
-	}
-	if (frameTimer % (60 * 2) == 0)
-	{
-		for (unsigned i = 0; i < m_enemies.size(); i++)
-		{
-			//Creates enemy bullets
-			m_Ebullets.push_back(new Bullet(-1, { m_enemies[i]->m_dst.x + 70, m_enemies[i]->m_dst.y + 70 }));
-			m_Ebullets.shrink_to_fit();
-			cout << "New bullet vector capacity: " << m_bullets.capacity() << endl;
-			Mix_PlayChannel(-1, m_sounds["laser"], 0);
-		}
-	}
-	for (unsigned i = 0; i < m_Ebullets.size(); i++)
-		m_Ebullets[i]->Update();
-	//Check for bullets going off-screen
-	for (unsigned i = 0; i < m_Ebullets.size(); i++)
-	{
-		if (m_Ebullets[i]->GetRekt()->x <= 0)
-		{
-			delete m_Ebullets[i]; //Flag for reallocation
-			m_Ebullets[i] = nullptr;
-			m_Ebullets.erase(m_Ebullets.begin() + i);
-			m_Ebullets.shrink_to_fit();
-		}
-	}
 
-	for (unsigned i = 0; i < m_enemies.size(); i++)
-	{
-		m_enemies[i]->Update();
-	}
-	for (unsigned i = 0; i < m_enemies.size(); i++)
-	{
-		if (m_enemies[i]->GetRekt()->x <= 0)
-		{
-			delete m_enemies[i];
-			m_enemies[i] = nullptr;
-			m_enemies.erase(m_enemies.begin() + i);
-			m_enemies.shrink_to_fit();
-		}
-	}
-
-	for (unsigned i = 0; i < m_enemies.size(); i++)
-	{
-		for (unsigned j = 0; j < m_bullets.size(); j++)
-		{
-			if (SDL_HasIntersection(m_enemies[i]->GetRekt(), m_bullets[j]->GetRekt()))
-			{
-				cout << "Collided" << endl;
-				delete m_bullets[j]; //Flag for reallocation
-				m_bullets[j] = nullptr;
-				m_bullets.erase(m_bullets.begin() + j);
-				m_bullets.shrink_to_fit();
-				delete m_enemies[i];
-				m_enemies[i] = nullptr;
-				m_enemies.erase(m_enemies.begin() + i);
-				m_enemies.shrink_to_fit();
-				Mix_PlayChannel(-1, m_sounds["kaboom"], 0);
-				break;
-			}
-		}
-	}
-
-	for (unsigned i = 0; i < m_Ebullets.size(); i++)
-	{
-		if (SDL_HasIntersection(&m_player.m_dst, m_Ebullets[i]->GetRekt()))
-		{
-			cout << "Collided" << endl;
-			delete m_Ebullets[i]; //Flag for reallocation
-			m_Ebullets[i] = nullptr;
-			m_Ebullets.erase(m_Ebullets.begin() + i);
-			m_Ebullets.shrink_to_fit();
-			Mix_PlayChannel(-1, m_sounds["kaboom"], 0);
-			m_player.m_dst.x = -300;
-			m_player.alive = false;
-			STMA::ChangeState(new EndState());
-			break;
-		}
-	}
-
-	for (unsigned i = 0; i < m_enemies.size(); i++)
-	{
-		if (SDL_HasIntersection(&m_player.m_dst, m_enemies[i]->GetRekt()))
-		{
-			m_player.m_dst.x = -300;
-			m_player.alive = false;;
-			Mix_PlayChannel(-1, m_sounds["kaboom"], 0);
-			STMA::ChangeState(new EndState());
-			break;
-		}
-	}
-	*/
 	m_bkg1.m_dst.x -= 1;
 	m_bkg2.m_dst.x -= 1;
 	if (m_bkg1.m_dst.x <= 0 - m_bkg1.m_dst.w)
@@ -522,38 +443,38 @@ void GameState::Render()
 		SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pBenchTexture, &m_bench[i]->m_src, &m_bench[i]->m_dst);
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pBushTexture, &m_bush.m_src, &m_bush.m_dst);
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pPlantTexture, &m_plant.m_src, &m_plant.m_dst);
-	m_pFontSurf = TTF_RenderText_Solid(m_font, "test", { 225,126,0,225 });
+	m_pFontSurf = TTF_RenderText_Solid(m_font, test, { 255,255,255,225 });
 	SDL_DestroyTexture(m_pTextTexture);
 	m_pTextTexture = SDL_CreateTextureFromSurface(Engine::Instance().GetRenderer(), m_pFontSurf);
-	m_scoreRect = { 10, 40, m_pFontSurf->w, m_pFontSurf->h };
+	m_scoreRect = { 950, 40, m_pFontSurf->w, m_pFontSurf->h };
 	SDL_FreeSurface(m_pFontSurf);
-	SDL_RenderCopyEx(Engine::Instance().GetRenderer(), m_pTextTexture, NULL, &m_scoreRect, m_angle++, 0, SDL_FLIP_NONE);
+	SDL_RenderCopyEx(Engine::Instance().GetRenderer(), m_pTextTexture, NULL, &m_scoreRect, m_angle, 0, SDL_FLIP_NONE);
 	SDL_RenderPresent(Engine::Instance().GetRenderer()); // Flip buffers - send data to window.
 }
 
 void GameState::Exit()
 {
-	/*for (unsigned i = 0; i < m_bullets.size(); i++)
+	for (unsigned i = 0; i < m_bench.size(); i++)
 	{
-		delete m_bullets[i]; //Flag for reallocation
-		m_bullets[i] = nullptr;
+		delete m_bench[i]; //Flag for reallocation
+		m_bench[i] = nullptr;
 	}
-	m_bullets.clear();
-	m_bullets.shrink_to_fit();
-	for (unsigned i = 0; i < m_Ebullets.size(); i++)
+	m_bench.clear();
+	m_bench.shrink_to_fit();
+	for (unsigned i = 0; i < m_pole.size(); i++)
 	{
-		delete m_Ebullets[i]; //Flag for reallocation
-		m_Ebullets[i] = nullptr;
+		delete m_pole[i]; //Flag for reallocation
+		m_pole[i] = nullptr;
 	}
-	m_Ebullets.clear();
-	m_Ebullets.shrink_to_fit();
-	for (unsigned i = 0; 9 < m_enemies.size(); i++)
+	m_pole.clear();
+	m_pole.shrink_to_fit();
+	for (unsigned i = 0; 9 < m_chains.size(); i++)
 	{
-		delete m_enemies[i];
-		m_enemies[i] = nullptr;
+		delete m_chains[i];
+		m_chains[i] = nullptr;
 	}
-	m_enemies.clear();
-	m_enemies.shrink_to_fit();*/
+	m_chains.clear();
+	m_chains.shrink_to_fit();
 	TTF_CloseFont(m_font);
 	SDL_DestroyTexture(m_pTexture);
 	Mix_FreeChunk(m_sounds["laser"]);
@@ -569,7 +490,7 @@ void GameState::Resume()
 PauseState::PauseState()
 {
 	m_pButtonTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "ResumeButton.png");
-	m_pButton = { {0,0,284,146}, {400,400,200,100} };
+	m_pButton = { {0,0,500,300}, {400,400,200,100} };
 }
 
 void PauseState::Enter()
@@ -582,6 +503,14 @@ void PauseState::Update()
 	{
 		STMA::PopState();
 	}
+
+	if (mouseX > m_pButton.m_dst.x && mouseX < (m_pButton.m_dst.x + m_pButton.m_dst.w)
+		&& mouseY > m_pButton.m_dst.y && mouseY < (m_pButton.m_dst.y + m_pButton.m_dst.h))
+	{
+		m_pButton.m_src.x = 500;
+	}
+	else
+		m_pButton.m_src.x = 0;
 
 	SDL_GetMouseState(&mouseX, &mouseY);
 }
@@ -639,9 +568,9 @@ void PauseState::Exit()
 
 EndState::EndState()
 {
-	m_pButtonTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "MainMenuButton.png");
-	m_bkgTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "GalacticBlazeBackground.png");
-	m_pButton = { {0,0,284,146}, {400,200,200,100} };
+	m_pButtonTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "MenuButton.png");
+	m_bkgTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "BackGround.jpg");
+	m_pButton = { {0,0,500,300}, {400,200,200,100} };
 	m_pBackground = { {0,0,1024,768}, {0,0,WIDTH,HEIGHT} };
 }
 
@@ -661,6 +590,14 @@ void EndState::Update()
 		cout << "entering gamestate" << endl;
 		STMA::ChangeState(new GameState());
 	}
+
+	if (mouseX > m_pButton.m_dst.x && mouseX < (m_pButton.m_dst.x + m_pButton.m_dst.w)
+		&& mouseY > m_pButton.m_dst.y && mouseY < (m_pButton.m_dst.y + m_pButton.m_dst.h))
+	{
+		m_pButton.m_src.x = 500;
+	}
+	else
+		m_pButton.m_src.x = 0;
 }
 
 void EndState::Events()

@@ -32,9 +32,11 @@ private:
 	SDL_Texture* m_pButtonTexture;
 	SDL_Texture* m_bkgTexture;
 	SDL_Texture* m_TitleTexture;
+	SDL_Texture* m_pExitTexture;
 	Sprite m_pBackground;
 	Sprite m_pButton;
 	Sprite m_pTitle;
+	Sprite m_exit;
 };
 
 class EndState : public State
@@ -50,9 +52,11 @@ private:
 	int mouseX, mouseY;
 
 	SDL_Texture* m_pButtonTexture;
+	
 	SDL_Texture* m_bkgTexture;
 	Sprite m_pBackground;
 	Sprite m_pButton;
+	
 };
 
 class PauseState : public State
@@ -86,6 +90,7 @@ public:
 private:
 	int enemySpawnPos;
 	int frameTimer;
+	int secondTimer;
 	//State s;
 
 	SDL_Texture* m_pTexture;
@@ -104,6 +109,8 @@ private:
 	SDL_Rect m_scoreRect;
 	SDL_Texture* m_pTextTexture;
 	double m_angle = 0.0;
+	std::string tmp;
+	char test[10];
 
 	SDL_Point m_velocity;
 	Sprite m_player;
