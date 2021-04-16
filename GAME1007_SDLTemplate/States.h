@@ -95,6 +95,16 @@ private:
 	SDL_Texture* m_pBushTexture;
 	SDL_Texture* m_pPlantTexture;
 	SDL_Texture* m_pBenchTexture;
+	SDL_Texture* m_pChainTexture;
+	SDL_Texture* m_pPoleTexture;
+
+	TTF_Font* m_font;
+
+	SDL_Surface* m_pFontSurf;
+	SDL_Rect m_scoreRect;
+	SDL_Texture* m_pTextTexture;
+	double m_angle = 0.0;
+
 	SDL_Point m_velocity;
 	Sprite m_player;
 	Sprite m_bkg1, m_bkg2;
@@ -104,7 +114,7 @@ private:
 	int spawnObstacle;
 	bool m_crouching;
 	//Bullet vector
-	vector<Sprite*> m_chains; //Not a bullet object butrather a pointer to a bullet
+	vector<Sprite*> m_chains; 
 	vector<Sprite*> m_bench;
 	vector<Sprite*> m_pole;
 

@@ -1,4 +1,5 @@
 #include "StateManager.h"
+#include "SDL_ttf.h"
 #include <iostream>
 
 void StateManager::Update()

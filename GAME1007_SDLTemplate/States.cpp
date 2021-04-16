@@ -14,7 +14,7 @@ void State::Resume()
 TitleState::TitleState() 
 {
 	m_pButtonTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "StartButton.png");
-	m_bkgTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "GalacticBlazeBackground.png");
+	m_bkgTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "BackGround.jpg");
 	m_TitleTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "Title.png");
 	m_pButton = { {0,0,284,146}, {400,400,200,100} };
 	m_pTitle = { {0,0,627, 222}, {350,100,300,150} };
@@ -101,6 +101,8 @@ GameState::GameState()
 		m_pBushTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "bush.png");
 		m_pPlantTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "plant.png");
 		m_pBenchTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "bench.png");
+		m_pChainTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "chain.png");
+		m_pPoleTexture = IMG_LoadTexture(Engine::Instance().GetRenderer(), "pole.png");
 	}
 
 	if (Mix_Init(MIX_INIT_MP3) != 0)
@@ -115,6 +117,11 @@ GameState::GameState()
 		m_sounds["jump"] = Mix_LoadWAV("Music/Jump.wav");
 		m_menuMusic = Mix_LoadMUS("Music/GreenPath.mp3");
 		m_gameMusic = Mix_LoadMUS("Music/GreenPath.mp3");
+	}
+
+	if (TTF_Init() == 0)
+	{
+		m_font = TTF_OpenFont("LTYPE.TTF", 22);
 	}
 
 	m_bkg1 = { {0,0,2268,653}, {0,0,WIDTH,HEIGHT} };
@@ -218,11 +225,21 @@ void GameState::Update()
 
 	if (frameTimer >= 200)
 	{
-		spawnObstacle = 0;//rand() % 3;
+		spawnObstacle = rand() % 3;
 		if (spawnObstacle == 0)
 		{
 			m_bench.push_back(new Sprite{ {0,0,189,107}, {1024, 580, 100, 100} });
 			m_bench.shrink_to_fit();
+		}
+		else if (spawnObstacle == 1)
+		{
+			m_chains.push_back(new Sprite{ {0,0,69,604}, {1024, 0, 60, 550} });
+			m_chains.shrink_to_fit();
+		}
+		else if (spawnObstacle == 2)
+		{
+			m_pole.push_back(new Sprite{ {0,0,76,449}, {1024, 350, 60, 350} });
+			m_pole.shrink_to_fit();
 		}
 		frameTimer = 0;
 	}
@@ -236,6 +253,56 @@ void GameState::Update()
 			m_bench[i] = nullptr;
 			m_bench.erase(m_bench.begin() + i);
 			m_bench.shrink_to_fit();
+		}
+		
+	}
+	for (unsigned i = 0; i < m_bench.size(); i++)
+	{
+		if (SDL_HasIntersection(&m_player.m_dst, &m_bench[i]->m_dst))
+		{
+			STMA::ChangeState(new EndState());
+		}
+	}
+
+	for (unsigned i = 0; i < m_chains.size(); i++)
+	{
+		m_chains[i]->m_dst.x -= 3;
+		if (m_chains[i]->m_dst.x <= -200)
+		{
+			delete m_chains[i];
+			m_chains[i] = nullptr;
+			m_chains.erase(m_chains.begin() + i);
+			m_chains.shrink_to_fit();
+		}
+		
+	}
+
+	for (unsigned i = 0; i < m_chains.size(); i++)
+	{
+		if (SDL_HasIntersection(&m_player.m_dst, &m_chains[i]->m_dst))
+		{
+			STMA::ChangeState(new EndState());
+		}
+	}
+
+	for (unsigned i = 0; i < m_pole.size(); i++)
+	{
+		m_pole[i]->m_dst.x -= 3;
+		if (m_pole[i]->m_dst.x <= -200)
+		{
+			delete m_pole[i];
+			m_pole[i] = nullptr;
+			m_pole.erase(m_pole.begin() + i);
+			m_pole.shrink_to_fit();
+		}
+		
+	}
+
+	for (unsigned i = 0; i < m_pole.size(); i++)
+	{
+		if (SDL_HasIntersection(&m_player.m_dst, &m_pole[i]->m_dst))
+		{
+			STMA::ChangeState(new EndState());
 		}
 	}
 	/*for (unsigned i = 0; i < m_bullets.size(); i++)
@@ -401,7 +468,7 @@ void GameState::Events()
 				//Mix_PlayChannel(-1, m_explosionSFX, 0);
 				break;
 			case '2':
-				STMA::ChangeState(new EndState());
+				
 				//Mix_PlayMusic(m_menuMusic, -1);
 				break;
 			case 's':
@@ -447,14 +514,20 @@ void GameState::Render()
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pFloorTexture, &m_floor2.m_src, &m_floor2.m_dst);
 	if (m_player.alive == true)
 		SDL_RenderCopyEx(Engine::Instance().GetRenderer(), m_pTexture, &m_player.m_src, &m_player.m_dst, 0.0, NULL, SDL_FLIP_HORIZONTAL);
-	/*for (unsigned i = 0; i < m_bullets.size(); i++)
-		m_bullets[i]->Render(Engine::Instance().GetRenderer());
-	for (unsigned i = 0; i < m_Ebullets.size(); i++)
-		m_Ebullets[i]->Render(Engine::Instance().GetRenderer());*/
+	for (unsigned i = 0; i < m_pole.size(); i++)
+		SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pPoleTexture, &m_pole[i]->m_src, &m_pole[i]->m_dst);
+	for (unsigned i = 0; i < m_chains.size(); i++)
+		SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pChainTexture, &m_chains[i]->m_src, &m_chains[i]->m_dst);
 	for (unsigned i = 0; i < m_bench.size(); i++)
 		SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pBenchTexture, &m_bench[i]->m_src, &m_bench[i]->m_dst);
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pBushTexture, &m_bush.m_src, &m_bush.m_dst);
 	SDL_RenderCopy(Engine::Instance().GetRenderer(), m_pPlantTexture, &m_plant.m_src, &m_plant.m_dst);
+	m_pFontSurf = TTF_RenderText_Solid(m_font, "test", { 225,126,0,225 });
+	SDL_DestroyTexture(m_pTextTexture);
+	m_pTextTexture = SDL_CreateTextureFromSurface(Engine::Instance().GetRenderer(), m_pFontSurf);
+	m_scoreRect = { 10, 40, m_pFontSurf->w, m_pFontSurf->h };
+	SDL_FreeSurface(m_pFontSurf);
+	SDL_RenderCopyEx(Engine::Instance().GetRenderer(), m_pTextTexture, NULL, &m_scoreRect, m_angle++, 0, SDL_FLIP_NONE);
 	SDL_RenderPresent(Engine::Instance().GetRenderer()); // Flip buffers - send data to window.
 }
 
@@ -481,6 +554,7 @@ void GameState::Exit()
 	}
 	m_enemies.clear();
 	m_enemies.shrink_to_fit();*/
+	TTF_CloseFont(m_font);
 	SDL_DestroyTexture(m_pTexture);
 	Mix_FreeChunk(m_sounds["laser"]);
 	Mix_FreeChunk(m_sounds["kaboom"]);
